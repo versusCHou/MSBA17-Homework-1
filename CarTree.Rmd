@@ -1,0 +1,71 @@
+---
+title: "carProjectTrees"
+author: "Vincent Chou"
+date: "July 20, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Tree Project - Chou 
+
+```{r}
+rm(list=ls())
+install.packages('rpart')
+install.packages('rpart.plot')
+install.packages("randomForest")
+
+library(rpart) 
+library(rpart.plot) 
+library(randomForest)
+
+require(rpart) 
+require(rpart.plot)
+require(randomForest)
+
+
+carData <- read.csv("Cars.csv")
+```
+
+```{r}
+
+r <- runif(nrow(carData))
+rCarData <- carData[order(r),] 
+ninety = as.integer(.9*nrow(rCarData))
+
+```
+
+```{r} 
+m1 <- rpart(price~.-X, data = rCarData[1:ninety,], method = "anova")
+
+rpart.plot(m1) 
+summary(m1, type = 3) 
+
+p <- predict(m1, rCarData[(ninety+1):nrow(rCarData),], type = "matrix")
+#predict(model, testData, type)
+
+sqrt(mean((p-rCarData[(ninety+1):nrow(rCarData), ncol(rCarData)])^2))
+
+```
+
+```{r} 
+
+m2 <- randomForest(price~., data = rCarData[1:ninety,]) 
+p2 <- predict(m2, rCarData[(ninety+1):nrow(rCarData), ], type = "response")
+
+sqrt(mean((p2-rCarData[(ninety+1):nrow(rCarData), ncol(rCarData)])^2)) 
+
+newCars <- read.csv("Cars_X_out.csv") 
+
+newCars$price = 0
+
+moreCars <- rbind(rCarData, newCars)
+
+newCars <- moreCars[(nrow(rCarData)+1):nrow(moreCars),]
+rCarData <- moreCars[1:nrow(rCarData),]
+
+p3 <- predict(m2, newCars)
+```
+
