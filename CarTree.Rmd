@@ -1,0 +1,51 @@
+---
+title: "carProjectTrees"
+author: "Vincent Chou"
+date: "July 20, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Tree Project - Chou 
+
+```{r}
+install.packages('rpart')
+install.packages('rpart.plot')
+
+library(rpart) 
+library(rpart.plot) 
+
+require(rpart) 
+require(rpart.plot)
+
+
+carData <- read.csv("Cars.csv")
+```
+
+```{r}
+
+r <- runif(nrow(carData))
+rCarData <- carData[order(r),]
+
+```
+
+```{r} 
+m1 <- rpart(price~., data = rCarData[1:27000,], method = "anova")
+
+rpart.plot(m1) 
+summary(m1, type = 3) 
+
+p <- predict(m1, rCarData[27001:29466,], type = "matrix")
+
+
+sqrt(mean((p-rCarData[27001:29466, 17])^2))
+```
+
+```{r} 
+
+
+```
+
