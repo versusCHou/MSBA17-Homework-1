@@ -1,0 +1,191 @@
+---
+title: "Exam1"
+author: "Vincent Chou"
+date: "July 12, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# 2.10
+
+### A 
+>To begin, load in the Boston data set. The Boston data set is
+part of the MASS library in R. Now the data set is contained in the object Boston. 
+Read about the data set.  
+How many rows are in this data set?  
+How many columns?  
+What do the rows and columns represent?  
+```{r}
+rm(list=ls())
+library(MASS)
+
+```
+
+Loaded the library "MASS"
+
+```{r eval= FALSE}
+
+?Boston
+```
+Examined the Boston dataframe.
+ 
+```{r}
+bos = Boston
+```
+
+Stored Boston as bos for ease of use.
+ 
+
+```{r}
+dim(bos)
+ 
+```
+
+Finds the rows and columns. 
+
+```{r}
+names(bos) #?Boston goes into detail 
+
+```
+
+>These are what the columns represent. The Boston help file details these variables:  
+crim  - per capita crime rate by town.  
+zn - proportion of residential land zoned for lots over 25,000 sq.ft.  
+indus - proportion of non-retail business acres per town. 
+chas - Charles River dummy variable (= 1 if tract bounds river; 0 otherwise).  
+nox - nitrogen oxides concentration (parts per 10 million).  
+rm - average number of rooms per dwelling.  
+age - proportion of owner-occupied units built prior to 1940.  
+dis - weighted mean of distances to five Boston employment centres.  
+rad - index of accessibility to radial highways.  
+tax - full-value property-tax rate per \$10,000.  
+ptratio - pupil-teacher ratio by town.  
+black - 1000(Bk - 0.63)^2 where Bk is the proportion of blacks by town.  
+lstat - lower status of the population (percent).  
+medv - median value of owner-occupied homes in \$1000s.   
+  
+  
+### B  
+>Make some pairwise scatterplots of the predictors (columns) in
+this data set. Describe your findings. 
+### C  
+>Are any of the predictors associated with per capita crime rate?
+If so, explain the relationship.
+
+```{r}
+pairs(bos)
+```
+
+Examined all pairs of scatterplots to look for a correlation. 
+
+```{r}
+plot(bos$rm,bos$lstat, xlab = "Room Number", ylab = "Proportion of Lower Status Population", main = "Rooms vs Lower Status")
+plot(bos$rm,bos$medv, xlab = "Room Number", ylab = "Median Value of Owner-Occupied Homes", main = "Rooms vs Home Value")
+
+```
+
+As expected the number of rooms in the homes of the Boston suburbs correlated negatively with lower status and positively with median house value.  
+
+```{r}
+plot(bos$lstat,bos$crim, ylab = "Crime Rate", xlab = "Proportion of Lower Status Population", main = "Crime vs Lower Status")
+plot(bos$medv,bos$crim, ylab = "Crime Rate", xlab = "Median Home Value", main = "Crime vs Home Value")
+```
+
+And, as expected, crime correlated positively with lower status population percentage and negatively with median home value.  
+
+```{r}
+plot(bos$black,bos$crim, ylab = "Crime", xlab = "African American Population", main = "Crime vs African Americans")
+```
+
+Interestingly there appeared to be a range of African American population proportion where crime dropped significantly. Some may take this as ossible evidence that more homogenous areas tend to have higher crime; however, we must note that this dip coincides with a lack of data points.   
+
+```{r}
+plot(bos$age,bos$crim, ylab = "Crime", xlab = "Homes made before 1940", main = "Crime vs Homes made before 1940")
+plot(bos$dis,bos$crim, ylab = "Crime", xlab = "Distance from Major Employment Centers", main = "Crime vs Distance")
+```
+
+Interestingly, there was a clear positive relationship between the proportion of owner-occupied homes that were made before 1940 and crime.  
+
+There was also a clear negative relationship between crime and distance from the major urban areas of Boston. It seems likely that older homes are are closer to these areas (being developed first) which explains the crime and age relationship. When plotting age and distance, that idea is confirmed. 
+
+```{r}
+plot(bos$dis,bos$crim, ylab = "Homes made before 1940", xlab = "Distance from Major Employment centers", main = "Home Age vs Distance from Urban Areas")
+```
+
+
+### D 
+>Do any of the suburbs of Boston appear to have particularly
+high crime rates? Tax rates? Pupil-teacher ratios? Comment on
+the range of each predictor. 
+
+### E 
+>How many of the suburbs in this data set bound the Charles
+river?  
+
+```{r}
+charles = bos[bos$chas ==1,] 
+nrow(charles)
+```
+
+35 suburbs are adjacent to Charles River. 
+
+### F 
+>What is the median pupil-teacher ratio among the towns in this
+data set?  
+
+```{r}
+median(bos$ptratio)
+
+```
+Returns the median pupil-teacher ratio (19.05).
+
+### G 
+>Which suburb of Boston has lowest median value of owneroccupied homes? What are the values of the other predictors for that suburb, and how do those values compare to the overall ranges for those predictors? Comment on your findings. 
+
+```{r}
+which.min(bos$medv)
+
+```
+The town at index 399 is the town with the lowest valued homes. 
+```{r}
+bos[which.min(bos$medv),]
+
+```
+And that is the summary of the town.  
+```{r eval = FALSE}
+summary(bos)
+
+```
+Compared to the rest of the Boston suburbs, several things pop out. Crime is 10 times higher than average. There are NO large residential lots. It is extremely old with every home being build before 1940, and it has the highest proportion of African Americans of the sampled suburbs. 
+
+
+### H 
+>In this data set, how many of the suburbs average more than
+seven rooms per dwelling? More than eight rooms per dwelling?
+Comment on the suburbs that average more than eight rooms
+per dwelling. 
+
+```{r}
+nrow(bos[bos$rm > 7,]) #returns 64 for number of suburbs with more than 7 rooms
+```
+Returns the number of suburbs that have more than 7 rooms on average (64).  
+
+```{r}
+nrow(bos[bos$rm > 8,]) #returns 13 for number of suburbs with more than 8 rooms
+```
+Returns the number of suburbs that have more than 8 rooms of average(13) 
+
+```{r eval = FALSE}
+bos[bos$rm > 8,] #data for those suburbs with more than 8 rooms 
+summary(bos) #Something to compare these suburbs with
+```
+
+```{r}
+summary(bos[bos$rm>8,])
+```
+
+These suburbs have much less crime and industry compared to others. Twice as many suburbs as would be expected are near the Charles River. They appear closer to employment areas than most. There is a far lower proportion of lower status populations in these suburbs. Homes are worth significantly more. Much of this is expected since larger homes are likely owned by wealthier people. 

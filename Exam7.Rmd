@@ -1,0 +1,69 @@
+---
+title: "Exam 7"
+author: "Vincent Chou"
+date: "July 31, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# 8.11 
+
+### A 
+
+```{r}
+rm(list=ls())
+library(ISLR)
+library(gbm)
+library(class)
+library(glmnet)
+Caravan$Purchase = ifelse(Caravan$Purchase == "Yes", 1,0)
+train = Caravan[1:1000,]
+test=Caravan[1001:nrow(Caravan),]
+```
+
+### B 
+```{r}
+set.seed(18)
+boost <- gbm(Purchase~., data = train, distribution = "bernoulli", n.trees = 1000, shrinkage= 0.01)
+summary(boost)
+```
+This lists the most important variables with PPERSAUT, MKOOPKLA, and MOPLHOOG being the most important. It appears almost half the variables have no importance at all. 
+
+### C 
+```{r}
+set.seed(18)
+prob= predict(boost, test, n.trees = 1000, type = "response")
+p1 = ifelse(prob > 0.2, 1, 0)
+table(test$Purchase, p1) 
+##Prediction 
+33/(119+33)
+```
+About 22% of the time when we predict someone will buy, they actually buy. 
+
+
+```{r}
+### KNN 
+set.seed(18)
+train.X = as.matrix(Caravan[1:1000,])
+test.X = as.matrix(Caravan[1001:nrow(Caravan),])
+train.Y = Caravan[1:1000, "Purchase"]
+kn =5
+knn = knn(train.X, test.X, train.Y, k = kn)
+t2 <- table(knn, test$Purchase)
+t2
+```
+KNN isn't working well. With a k=20, it wouldn't predict any Yes's. With k=5 it's still producing very poor numbers. Intuitively this makes sense since if it has very few Yes's in general, most of its neighbors are likely No's regardless. So having a low K may help, but in the end, it'd be very difficult to predict using KNN. 
+
+```{r}
+set.seed(18)
+log <- glm(Purchase~.,data= train, family = "binomial") 
+logProb <- predict(log, test, type= "response")
+p2 <- ifelse(logProb >.2, 1,0)
+t3 <- table(p2,test$Purchase)
+t3
+58/(231+58)
+```
+For the logistic model it comes close to matching the boosting tree, but not quite at 20% accuracy. 

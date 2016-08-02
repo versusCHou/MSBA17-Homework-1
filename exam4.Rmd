@@ -1,0 +1,106 @@
+---
+title: "Exam 4"
+author: "Vincent Chou"
+date: "July 28, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# 6.11 
+
+### A 
+```{r}
+rm(list = ls())
+library(MASS)
+library(leaps)
+library(glmnet)
+library(pls)
+```
+
+```{r}
+head(Boston)
+set.seed(18)
+train <- sample(c(TRUE,FALSE), nrow(Boston), rep = TRUE) #Building a training and test set
+trainBos <- Boston[train,]
+testBos <-Boston[!train,]
+###
+predict.regsubsets = function(object, newdata, id, ...) {
+    form = as.formula(object$call[[2]])
+    mat = model.matrix(form, newdata)
+    coefi = coef(object, id = id)
+    mat[, names(coefi)] %*% coefi
+}
+###
+set.seed(18)
+#Validation Set approach 
+subset <- regsubsets(crim~., trainBos, nvmax = 13)  #Best subset in the training data 
+subMat <- model.matrix(crim~.,data = testBos) #Build a model matrix for the testdata 
+errors <- rep(NA,13) #initialize a place to store errors
+for (i in 1:13){
+  coefi <- coef(subset, id =i)  #grab the coefficients from subset 
+  pr =subMat[, names(coefi)]%*%coefi #predictions 
+  errors[i]= sqrt(mean((testBos[1]-pr)^2)) #RMSE storage
+}
+which.min(errors) #find the minimum error index 
+e1 <- errors[which.min(errors)]
+coef(subset,which.min(errors)) #get the coefficients of the minimum error model 
+bestSub <- regsubsets(crim~.,Boston, nvmax=13) #Running it with the entire data set 
+coef(bestSub, which.min(errors)) #This is the best one 
+
+#Cross validation 
+k = 10 #Number of folds 
+folds = sample(rep(1:k, length = nrow(Boston))) #This is how we pull out samples from the fold
+cv.errors = matrix(NA, k, 13) #empty matrix to store the results 
+for (i in 1:k) {
+    best.fit = regsubsets(crim~., data= Boston[folds != i,], nvmax = 13)
+    for (j in 1:13) {
+        pred = predict(best.fit, Boston[folds == i, ], id = j)
+        cv.errors[i, j] = mean((Boston$crim[folds == i] - pred)^2)
+    }
+}
+
+rmse = sqrt(apply(cv.errors, 2, mean))
+which.min(rmse) 
+e2 <- rmse[which.min(rmse)]
+```
+
+The best model determined through the validation set was a 6 variable model. The best model determined through cross validation was a 9 variable model. The 6 variable model had slightly better error than the 9 variable model.  
+
+```{r}
+#RIDGE and LASSO 
+set.seed(18)
+grid = 10^seq(4, -2, length=100) 
+
+x = model.matrix(crim~., data = Boston)
+y = Boston$crim
+cvLasso = cv.glmnet(x, y, type = "mse", alpha =1, lambda = grid)
+plot(cvLasso) 
+e3 <- sqrt(cvLasso$cvm[cvLasso$lambda == cvLasso$lambda.min])
+cvRidge = cv.glmnet(x, y, type.measure = "mse", alpha = 0, lambda = grid)
+plot(cvRidge) 
+e4 <- sqrt(cvRidge$cvm[cvRidge$lambda == cvRidge$lambda.min])
+
+```
+
+Ridge is slightly better than Lasso.  
+
+```{r}
+set.seed(18)
+pcr= pcr(crim~., data = Boston, scale=TRUE, validation = "CV")
+summary(pcr) #min is at 13 variables
+pcrPred= predict(pcr, testBos, ncomp =13)
+e5 <- sqrt(mean((pcrPred-testBos[,1])^2))
+```
+### B 
+Error for Lasso, ridge and the nine variable model found through the cross validation are similar, but the validation subset is a simpler model, so that is the one I want to use. 
+```{r}
+barplot(c(e1,e2,e3,e4,e5), names = c("ValSub", "Cross Validation", "Lasso", "Ridge", "PCR"))
+```
+
+### C 
+
+I only use nine variables because the ridge while slightly better utilizes all the components which is significantly more complicated with 13 components. Simpler is generally better, so I used the nine unit model. 

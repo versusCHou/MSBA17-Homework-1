@@ -1,0 +1,109 @@
+---
+title: "Exam3"
+author: "Vincent Chou"
+date: "July 20, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#6.9
+```{r}
+rm(list = ls())
+library(glmnet)
+college <- read.csv("College.csv", row.names = 1)
+```
+The first column contains the names of the universities. 
+
+###A. 
+```{r}
+set.seed(18)
+trainSize = dim(college)[1] / 2 #making the training and test sizes equal, not necessarily necessary 
+train = sample(1:dim(college)[1], trainSize) #randomly pulling out half of the indices of all the possible indices 1:777
+test = -train #The opposite mask 
+training = college[train, ] #Now my training set has only the rows defined by the train indices. 
+testing = college[test, ] #now my test set is the rows that weren't put into training 
+```
+
+###B. 
+```{r}
+m1 = lm(Apps~., data=training) #making the linear regression model 
+p1 = predict(m1, testing) #predicting given the testing Xs 
+e1 <- sqrt(mean((p1-testing[, "Apps"])^2)) #the RMSE of this model 
+e1
+```
+So this returns the RMSE for a linear model where Y is "Apps" and all other variables are the Xs. 
+
+###C. 
+```{r}
+trainMat = model.matrix(Apps~., data=training)[,-1] #building a model matrix of the training set 
+trainY = training$Apps
+testMat = model.matrix(Apps~., data=testing)[,-1] #building a model matrix of the test set 
+grid = 10^seq(4, -2, length=100) #Making 100 possible lambdas from 0.01 to 10000
+ridge <- glmnet(trainMat, trainY, alpha = 0, lambda = grid, thresh = 1e-12, standardize = TRUE)
+plot(ridge)
+cvRidge = cv.glmnet(trainMat, trainY, alpha = 0, lambda = grid, thresh = 1e-12, standardize = TRUE)
+plot(cvRidge)
+bestLam = cvRidge$lambda.min
+bestLam 
+p2 = predict(ridge, newx= testMat,s= bestLam)
+e2 <- sqrt(mean((testing[,"Apps"]-p2)^2))
+e2
+
+```
+
+This RMSE is higher than the RMSE for the linear model. 
+
+### D 
+```{r}
+lass <- glmnet(trainMat, training[,"Apps"], alpha = 1 , lambda = grid) 
+plot(lass)
+set.seed(18)
+cvLass <- cv.glmnet(trainMat, training[,"Apps"], alpha =1 , lambda = grid) 
+plot(cvLass) 
+bessLam <- cvLass$lambda.min
+bessLam 
+p3 <- predict(lass, s= bessLam, newx = testMat) 
+e3 <- sqrt(mean((p3-testing[,"Apps"])^2))
+e3
+out <-  glmnet(model.matrix(Apps~., data = college), college[,17], alpha =1, lambda = grid)
+predict(out, s=bessLam, type = "coefficients")[1:19,]
+```
+Significantly lower than the error of the ridge. 
+
+### E 
+
+```{r}
+library(pls) 
+set.seed(18)
+pcrM <- pcr(Apps~., data = college, scale = TRUE, validation = "CV")
+validationplot(pcrM) 
+summary(pcrM)
+pcrTrain <- pcr(Apps~., data = testing, scale = TRUE, validation = "CV") 
+validationplot(pcrTrain)
+summary(pcrTrain)
+p4 <- predict(pcrTrain, testMat, ncomp = 10)
+e4 <- sqrt(mean((p4-testing[,"Apps"])^2))
+e4
+```
+
+### F 
+
+```{r}
+pslM <- plsr(Apps~., data = training, scale = TRUE, validation = "CV")
+summary(pslM)
+validationplot(pslM)
+p5 <- predict(pslM, testMat, ncomp = 8)
+e5 <- sqrt(mean((p5-testing[,"Apps"])^2))
+e5
+
+```
+
+### G 
+
+```{r}
+barplot(c(e1,e2,e3,e4,e5), names=c("OLS", "Ridge", "Lasso", "PCR", "PLS"), main="Test R-squared")
+```
+The only significantly different result came from PCR. It appears we can generally predict +/- 2400 applications. 

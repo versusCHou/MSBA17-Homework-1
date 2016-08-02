@@ -1,0 +1,127 @@
+---
+title: "Exam5"
+author: "Vincent Chou"
+date: "July 31, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#4.10 
+
+### A 
+```{r}
+library(ISLR)
+library(glmnet) 
+library(class)
+head(Weekly) 
+pairs(Weekly)
+```
+The only variables that appear to have any correlation are Year and Volume. All the lag variables produce what appears to be a random blob with each other and a straight line (slope of close to zero) with year. 
+
+### B 
+Making a logistic model that looks for the Direction odds with the five lag variables and the volume. 
+
+```{r}
+glm.fit =glm(Direction~Lag1+Lag2+Lag3+Lag4+Lag5+Volume, data=Weekly, family = binomial)
+summary(glm.fit)
+```
+The only variable of any significance appears to be Lag2. The positive coefficient says that if the market went up before, it's more likely to go up again.  
+
+### C 
+```{r}
+probs <- predict(glm.fit, type = "response") 
+glm.predict <- rep("Down", length(probs)) 
+glm.predict[probs > 0.5] = "Up"
+t1 <- table(glm.predict, Weekly$Direction)
+sums = 0
+for (i in 1:nrow(t1)){
+  sums = sums+ t1[i,i]
+}
+sums/length(probs)
+```
+Generally when we predict "Up", we're guessing correctly, but we are guessing "Up" too much and a lot of "Downs" are being predicted as ups. We're barely guessing half of them correctly. 
+
+### D 
+```{r}
+training <- Weekly[Weekly$Year<2009,]
+testing <- Weekly[Weekly$Year>2008,]
+train.fit <- glm(Direction~Lag2, data = training, family = binomial)
+probs <- predict(train.fit, testing,type = "response")
+glm.predict <- rep("Down",length(probs))
+glm.predict[probs>0.5]= "Up"
+t2 <- table(glm.predict, testing$Direction)
+t2
+sums = 0
+for (i in 1:nrow(t2)){
+  sums = sums+t2[i,i]
+}
+sums/length(probs)
+```
+Slightly better, but still pretty bad and failing the same way. 
+
+### G 
+```{r}
+set.seed(18) 
+kn = 1 
+train.X = as.matrix(Weekly$Lag2[Weekly$Year<2009])
+test.X = as.matrix(Weekly$Lag2[Weekly$Year>2008])
+train.Direction = Weekly$Direction[Weekly$Year<2009]
+knn = knn(train.X, test.X, train.Direction, k = kn)
+t3 <- table(knn, testing$Direction)
+t3 
+sums = 0
+for (i in 1:nrow(t3)){
+  sums = sums+t3[i,i]
+}
+sums/length(probs)
+```
+
+### H 
+
+The Logistic equation was better than our KNN, but at the same time, we only used k=1 which is terrible. 
+
+### I 
+```{r}
+set.seed(18) 
+
+knn = knn(train.X, test.X, train.Direction, k = 10)
+t4 <- table(knn, testing$Direction)
+sums = 0
+for (i in 1:nrow(t4)) {
+  sums = sums+t4[i,i]
+  }
+sums/length(probs)
+
+knn = knn(train.X, test.X, train.Direction, k = 5)
+t5 <- table(knn, testing$Direction)
+sums = 0
+for (i in 1:nrow(t5)) {
+  sums = sums+t5[i,i]
+  }
+sums/length(probs)
+
+knn = knn(train.X, test.X, train.Direction, k = 15)
+t5 <- table(knn, testing$Direction)
+sums = 0
+for (i in 1:nrow(t5)) {
+  sums = sums+t5[i,i]
+  }
+sums/length(probs) 
+
+glm.fit =glm(Direction~Lag1:Lag2+Lag2, data=Weekly, family = binomial)
+summary(glm.fit)
+probs <- predict(glm.fit, type = "response") 
+glm.predict <- rep("Down", length(probs)) 
+glm.predict[probs > 0.5] = "Up"
+t6 <- table(glm.predict, Weekly$Direction)
+sums = 0
+for (i in 1:nrow(t6)){
+  sums = sums+ t1[i,i]
+}
+sums/length(probs)
+
+```
+

@@ -1,0 +1,75 @@
+---
+title: "Exam 6"
+author: "Vincent Chou"
+date: "July 31, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# 8.8 
+
+```{r} 
+rm(list = ls())
+library(ISLR)
+library(rpart)
+library(rpart.plot)
+library(randomForest)
+```
+
+### A 
+```{r}
+set.seed(18)
+mask = sample(dim(Carseats)[1], dim(Carseats)[1]/2)
+test = Carseats[mask, ]
+train = Carseats[-mask, ]
+
+```
+
+### B 
+```{r}
+#tree
+set.seed(18)
+m1 <- rpart(Sales~., data = train, method = "anova")
+rpart.plot(m1)
+p1 <- predict(m1, test)
+sqrt(mean((p1-test["Sales"])^2))
+```
+
+### C 
+```{r}
+#Pruning in rpart
+set.seed(18)
+printcp(m1) #A tree with 11 terminal nodes has the lowest error 
+plotcp(m1)
+m2 <- prune(m1,cp=.011608) #Couldn't quite figure out how to automatically grab this 
+rpart.plot(m2)
+p2 <- predict(m2, test)
+sqrt(mean((p2-test["Sales"])^2))
+```
+Pruning made the test error slightly worse. 
+
+### D
+```{r}
+#Bagging
+set.seed(18)
+rf <- randomForest(Sales~., data = train, mtry= 10,importance = TRUE) 
+
+p3 <- predict(rf, test)
+sqrt(mean((p3-test["Sales"])^2))
+importance(rf)
+```
+We see that the most important variables are Price, ShelveLoc, and Age. 
+
+### E 
+```{r}
+#Random Forest
+set.seed(18)
+rf2 <- randomForest(Sales~., data = train, importance = TRUE)
+p4 <- predict(rf2,test)
+sqrt(mean((p4-test["Sales"])^2))
+importance(rf2)
+```
+As we go down, RMSE goes up. The same variables that were important in the bagging part, are still the most important, but less so comparatively 

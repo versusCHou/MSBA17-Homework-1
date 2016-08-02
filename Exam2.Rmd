@@ -1,0 +1,126 @@
+---
+title: "Exam2"
+author: "Vincent Chou"
+date: "July 17, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+#3.15
+```{r}
+rm(list=ls())
+library(MASS)
+b =Boston
+names(b)
+```
+
+###Part a. 
+For each predictor, fit a simple linear regression model to predict
+the response. Describe your results. In which of the models is
+there a statistically significant association between the predictor
+and the response? Create some plots to back up your assertions.
+```{r} 
+modList = vector(mode = "list", length = 13)
+#Couldn't figure out how to change the model in a loop, so I had to go old fashioned
+modList[[1]] <- lm(crim~zn,data =b)
+modList[[2]] <- lm(crim~indus, data = b)
+modList[[3]] <- lm(crim~chas, data = b)
+modList[[4]] <- lm(crim~nox, data = b)
+modList[[5]] <- lm(crim~rm, data = b) 
+modList[[6]] <- lm(crim~age, data = b) 
+modList[[7]] <- lm(crim~dis, data = b) 
+modList[[8]] <- lm(crim~rad, data = b) 
+modList[[9]] <- lm(crim~tax, data = b) 
+modList[[10]] <- lm(crim~ptratio, data = b) 
+modList[[11]] <- lm(crim~black, data = b)
+modList[[12]] <- lm(crim~lstat, data = b)
+modList[[13]] <- lm(crim~medv, data = b)  
+#Pull out just the sigma 
+errors = list()
+for (i in seq(1:13)) {
+  errors = c(errors, summary(modList[[i]])[6])
+}
+
+
+```
+
+From the list of errors, the rad and tax variables seem to be the best predictors of crime.  
+```{r}
+
+par(mfrow=c(1,2))
+plot(b$rad, b$crim)
+abline(lm(b$crim~b$rad))
+plot(b$tax, b$crim)
+abline(lm(b$crim~b$tax))
+```
+
+Even though they're our best predictors they don't seem too accurate.  
+
+
+###Part b 
+Fit a multiple regression model to predict the response using
+all of the predictors. Describe your results. For which predictors
+can we reject the null hypothesis H\_0 : Beta_j = 0? 
+
+```{r}
+
+allMod <- lm(crim~., data = b)
+
+summary(allMod)
+```
+
+From the summary, all variables marked by at least one * we can reject H_0. These variables are zn, indus, dis, rad, black, and medv.  
+
+### C 
+```{r}
+singleCo <- list() 
+
+for (i in seq(1,13)) {
+  singleCo[i] <- summary(modList[[i]])$coefficients[2]
+}
+
+
+multiCo <- summary(allMod)$coefficients[2:14] 
+par(mfrow= c(1,1))
+plot(singleCo, multiCo) 
+
+```
+
+The coefficients for multiple linear regression seem consistently smaller than those for univariate liner regression. The nox variable's coefficient seemed is the outlier point. I am not sure what to make of it.  
+
+```{r}
+modListp = list()
+b$chas = as.factor(b$chas)
+modListp[[1]] <- lm(crim~poly(zn,3),data =b)
+summary(modListp[[1]])
+modListp[[2]] <- lm(crim~poly(indus,3), data = b)
+summary(modListp[[2]])
+modListp[[3]] <- lm(crim~chas, data = b)
+summary(modListp[[3]])
+modListp[[4]] <- lm(crim~poly(nox,3), data = b)
+summary(modListp[[4]])
+modListp[[5]] <- lm(crim~poly(rm,3), data = b) 
+summary(modListp[[5]])
+modListp[[6]] <- lm(crim~poly(age,3), data = b) 
+summary(modListp[[6]])
+modListp[[7]] <- lm(crim~poly(dis,3), data = b) 
+summary(modListp[[7]])
+modListp[[8]] <- lm(crim~poly(rad,3), data = b) 
+summary(modListp[[8]])
+modListp[[9]] <- lm(crim~poly(tax,3), data = b) 
+summary(modListp[[9]])
+modListp[[10]] <- lm(crim~poly(ptratio,3), data = b) 
+summary(modListp[[10]])
+modListp[[11]] <- lm(crim~poly(black,3), data = b)
+summary(modListp[[11]])
+modListp[[12]] <- lm(crim~poly(lstat,3), data = b)
+summary(modListp[[12]])
+modListp[[13]] <- lm(crim~poly(medv,3), data = b) 
+summary(modListp[[13]])
+
+
+```
+
+All of the variables except black show signs of a non-linear association.
